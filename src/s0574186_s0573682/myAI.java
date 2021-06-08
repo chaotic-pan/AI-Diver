@@ -16,6 +16,7 @@ public class myAI extends AI {
     ArrayList<Node> openPearls;
     ArrayList<Node> way = new ArrayList<>(0);
     ArrayList<Node> airWay = new ArrayList<>(0);
+    boolean airUpgrade = false;
 
 
     public myAI(Info info) {
@@ -80,9 +81,8 @@ public class myAI extends AI {
 
         info.getMaxAir();
 
-
         // stick to the surface.....?
-        if (air < Math.abs(pearls.get(0).y*deep())+getDistance(pos, pearls.get(0)) && getDistance(pos,openPearls.get(0).top.coordinates) > 10 && pos.y==0) {
+        if (airUpgrade && air < Math.abs(pearls.get(0).y*deep())+getDistance(pos, pearls.get(0)) && getDistance(pos,openPearls.get(0).top.coordinates) > 10 && pos.y==0) {
             direction = seek(pos, openPearls.get(0).top.coordinates);
             return new DivingAction(velocity,direction);
         }
@@ -111,9 +111,7 @@ public class myAI extends AI {
             way = quickestWay(getClosestNode(pos), openPearls.get(0));
         }
         //way wird überschrieben aber es wird in die schleife gegriffen
-        boolean airUpgrade = false;
-        if(info.getFortune()< 2 && !airUpgrade) {
-            System.out.println("zieht das?");
+        if(info.getFortune()< 2 ) {
             way = quickestWay(getClosestNode(pos), getClosestNode(getClosestTrash(pos)));
 
         }
