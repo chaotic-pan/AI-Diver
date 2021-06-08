@@ -10,13 +10,17 @@ public class myAI extends AI {
 
     Point pos;
     int lastScore = 0;
+    int lastFortune = 0;
     Node[][] graph;
     Node lastPearl;
     ArrayList<Point> pearls = new ArrayList<>();
     ArrayList<Node> openPearls;
     ArrayList<Node> way = new ArrayList<>(0);
     ArrayList<Node> airWay = new ArrayList<>(0);
+    ArrayList<Node> trashWay = new ArrayList<>(0);
+    ArrayList<Point> openTrash;
     boolean airUpgrade = false;
+
 
 
     public myAI(Info info) {
@@ -27,6 +31,7 @@ public class myAI extends AI {
         long arrayFillTime = System.currentTimeMillis() - time;
         System.out.println("Filled Array in " + arrayFillTime + "ms");
         openPearls = sortPearls();
+        openTrash = new ArrayList<>(Arrays.asList(info.getScene().getRecyclingProducts()));
     }
 
     @Override
@@ -110,27 +115,22 @@ public class myAI extends AI {
             way.clear();
             way = quickestWay(getClosestNode(pos), openPearls.get(0));
         }
-        //way wird überschrieben aber es wird in die schleife gegriffen
-        if(info.getFortune()< 2 ) {
-            way = quickestWay(getClosestNode(pos), getClosestNode(getClosestTrash(pos)));
 
+        //way wird überschrieben aber es wird in die schleife gegriffen
+        int currentFortune = info.getFortune();
+        if(currentFortune < 2 ) {
+
+            trashWay = quickestWay(getClosestNode(pos), getClosestNode(getClosestTrash(pos)));
+            if(currentFortune > lastFortune) {
+                trashWay.remove(getClosestTrash(pos));
+                lastFortune = currentFortune;
+            }
+            return followPath(trashWay);
         }
+
         // check if there's a path you can follow
-        if (way.size() > 0) {
-            // if ya can go straight to the next waypoint, skip the current
-            while (way.size() > 1 && pathFree(pos, way.get(1).coordinates)) {
-                way.remove(0);
-            }
-            // if ya close enough to the next waypoint, ya can remove it
-            if (way.size() > 0 && getDistance(pos, way.get(0).coordinates) < 10) {
-                way.remove(0);
-            }
-            // now, if there's still path left, follow it
-            if (way.size() > 0) {
-                direction = seek(pos, way.get(0).coordinates);
-                if (pathFree(pos, pearls.get(0))) direction = seek(pos, pearls.get(0));
-                return new DivingAction(velocity, direction);
-            }
+        if(way.size() > 0) {
+            return followPath(way);
         }
 
         // else, check if you can go there straight
@@ -146,6 +146,25 @@ public class myAI extends AI {
         return new DivingAction(velocity, direction);
     }
 
+    private DivingAction followPath (ArrayList<Node> nodeWay) {
+        float direction;
+        float velocity = info.getMaxVelocity();
+            // if ya can go straight to the next waypoint, skip the current
+            while (nodeWay.size() > 1 && pathFree(pos, nodeWay.get(1).coordinates)) {
+                nodeWay.remove(0);
+            }
+            // if ya close enough to the next waypoint, ya can remove it
+            if (nodeWay.size() > 0 && getDistance(pos, nodeWay.get(0).coordinates) < 10) {
+                nodeWay.remove(0);
+            }
+            // now, if there's still path left, follow it
+            if (nodeWay.size() > 0) {
+                direction = seek(pos, nodeWay.get(0).coordinates);
+                if (pathFree(pos, pearls.get(0))) direction = seek(pos, pearls.get(0));
+                return new DivingAction(velocity, direction);
+            }
+        return null;
+    }
 
     private float deep() {
         float coeff = 0.72f;
