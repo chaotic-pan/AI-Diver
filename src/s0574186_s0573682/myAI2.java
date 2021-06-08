@@ -10,7 +10,7 @@ import java.util.*;
 public class myAI2 extends AI {
     public myAI2(Info info) {
         super(info);
-        enlistForTournament(574186);
+        enlistForTournament(574186, 573682);
     }
 
     @Override

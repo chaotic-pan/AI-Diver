@@ -6,9 +6,26 @@ import java.util.*;
 
 
 public class myAI extends AI {
+
+
+    Point pos;
+    int lastScore = 0;
+    Node[][] graph;
+    Node lastPearl;
+    ArrayList<Point> pearls = new ArrayList<>();
+    ArrayList<Node> openPearls;
+    ArrayList<Node> way = new ArrayList<>(0);
+    ArrayList<Node> airWay = new ArrayList<>(0);
+
+
     public myAI(Info info) {
         super(info);
         enlistForTournament(574186, 573682);
+        long time = System.currentTimeMillis();
+        graph = buildGraph();
+        long arrayFillTime = System.currentTimeMillis() - time;
+        System.out.println("Filled Array in " + arrayFillTime + "ms");
+        openPearls = sortPearls();
     }
 
     @Override
@@ -31,19 +48,11 @@ public class myAI extends AI {
     // 3 07pGyuCN4mE T5ODOIjpTv
     // 4 fljn8vd0qW 6dY8fXG1gr
 
-    Point pos;
-    int lastScore = 0;
-    Node[][] graph = buildGraph();
-    Node lastPearl;
-    ArrayList<Point> pearls = new ArrayList<>();
-    ArrayList<Node> openPearls = sortPearls();
-    ArrayList<Node> way = new ArrayList<>(0);
-    ArrayList<Node> airWay = new ArrayList<>(0);
 
     @Override
     public PlayerAction update() {
         pos = new Point(info.getX(), info.getY());
-        float velocity = info.getMaxVelocity();
+        float velocity = info.getMaxVelocity(); //Geschwindigkeit
         float direction;
         float air = info.getAir();
 
@@ -60,13 +69,17 @@ public class myAI extends AI {
                     break;
                 }
             }
-            lastScore= info.getScore();
+            lastScore = info.getScore();
 
-
+            //look if there is enough air to get to the next pearl
             if (air < Math.abs(openPearls.get(0).topCost*deep())+getDistance(pos, pearls.get(0))) {
+                //if not swim up
                 airWay = lastPearl.topPath;
             }
         }
+
+        info.getMaxAir();
+
 
         // stick to the surface.....?
         if (air < Math.abs(pearls.get(0).y*deep())+getDistance(pos, pearls.get(0)) && getDistance(pos,openPearls.get(0).top.coordinates) > 10 && pos.y==0) {
@@ -75,15 +88,9 @@ public class myAI extends AI {
         }
 
         if (air < Math.abs(pos.y*deep()) && airWay.size()==0) {
-            if (pathFree(pos, new Point(pos.x, 0))) {
-                if (air < Math.abs(pos.y*deep())) {
-                    airWay.clear();
-                    airWay.add(new Node(new Point(pos.x, 0)));
-                }
-            } else {
-                airWay = lastPearl.topPath;
-            }
+            airWay = lastPearl.topPath;
         }
+
         if (airWay.size() > 0) {
             // while next is direct reachable, yeet the current
             while (way.size() > 1 && pathFree(pos, way.get(1).coordinates)) {
@@ -103,7 +110,13 @@ public class myAI extends AI {
             way.clear();
             way = quickestWay(getClosestNode(pos), openPearls.get(0));
         }
+        //way wird überschrieben aber es wird in die schleife gegriffen
+        boolean airUpgrade = false;
+        if(info.getFortune()< 2 && !airUpgrade) {
+            System.out.println("zieht das?");
+            way = quickestWay(getClosestNode(pos), getClosestNode(getClosestTrash(pos)));
 
+        }
         // check if there's a path you can follow
         if (way.size() > 0) {
             // if ya can go straight to the next waypoint, skip the current
@@ -135,6 +148,7 @@ public class myAI extends AI {
         return new DivingAction(velocity, direction);
     }
 
+
     private float deep() {
         float coeff = 0.72f;
         if (openPearls.size() == 1) {
@@ -143,25 +157,27 @@ public class myAI extends AI {
         else return coeff;
     }
 
-    /* get closest Pearl
-    ArrayList<Point> pearls =  new ArrayList<>(Arrays.asList(info.getScene().getPearl()));
-    Point goal = getPearl(pos);
-    private Point getPearl(Point pos) {
-        if (pos==null) pos = new Point(info.getScene().getWidth()/2, 0);
+    //get closest Pearl
+    //ArrayList<Point> pearls =  new ArrayList<>(Arrays.asList(info.getScene().getPearl()));
+    //goal = getPearl(pos);
+    private Point getClosestTrash(Point pos) {
+        Point[] trashPos = info.getScene().getRecyclingProducts();
+        //if (pos==null) pos = new Point(info.getScene().getWidth()/2, 0);
 
         float distance = Integer.MAX_VALUE;
         Point closest = null;
 
-        for (Point pearl : pearls) {
-            float dis = getDistance(pos, pearl);
+        for (Point trash : trashPos) {
+            float dis = getDistance(pos, trash);
             if (dis < distance) {
-                closest = pearl;
+                closest = trash;
                 distance = dis;
             }
         }
 
         return closest;
-    }*/
+    }
+
     // sort in one direction, deeps last
     private  ArrayList<Node> sortPearls() {
         ArrayList<Point> pearls = new ArrayList<>(Arrays.asList(info.getScene().getPearl()));
@@ -178,8 +194,8 @@ public class myAI extends AI {
         }
 
         // sort deeps from left to right
-        int s = deeps.size();
-        for (int i=0; i<s; i++) {
+        int amountDeepPearls = deeps.size();
+        for (int i=0; i<amountDeepPearls; i++) {
             double x = 0;
             int closest = 0;
             for (int j=0; j<deeps.size(); j++) {
@@ -502,24 +518,4 @@ public class myAI extends AI {
     }
 }
 
-class Node {
-    public boolean valid;
-    public Point coordinates;
-    public HashMap<Node, Float> edges = new HashMap<>();
-    public float cost;
-    public Node previous;
-    ArrayList<Node> topPath;
-    Node top;
-    float topCost;
-
-    public Node(int x, int y) {
-        coordinates = new Point(x,y);
-        valid = true;
-    }
-
-    public Node(Point coordinates) {
-        this.coordinates = coordinates;
-        valid = true;
-    }
-}
 
