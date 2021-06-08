@@ -1,4 +1,4 @@
-package s0574186;
+package s0574186_s0573682;
 import lenz.htw.ai4g.ai.AI;
 import lenz.htw.ai4g.ai.DivingAction;
 import lenz.htw.ai4g.ai.Info;

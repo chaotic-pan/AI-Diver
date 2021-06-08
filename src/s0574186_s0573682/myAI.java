@@ -1,4 +1,4 @@
-package s0574186;
+package s0574186_s0573682;
 import lenz.htw.ai4g.ai.*;
 import java.awt.*;
 import java.awt.geom.Path2D;
@@ -8,7 +8,7 @@ import java.util.*;
 public class myAI extends AI {
     public myAI(Info info) {
         super(info);
-        enlistForTournament(574186);
+        enlistForTournament(574186, 573682);
     }
 
     @Override
