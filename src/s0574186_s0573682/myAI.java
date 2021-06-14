@@ -134,8 +134,7 @@ public class myAI extends AI {
             return followPath(trashWay, currentTrash);
 
 
-        } else if(currentFortune == 2){
-            //TODO boat thing add to trashway
+        } else if(currentFortune == 2 && !airUpgrade){
             if(pos.x == info.getScene().getShopPosition() && pos.y == 0){
                 airUpgrade = true;
                 return new ShoppingAction(ShoppingItem.BALLOON_SET);
@@ -146,9 +145,10 @@ public class myAI extends AI {
             return followPath(trashWay, shopPos);
         }
 
-
-
-
+        //TODO Reihenfolge der Perlen ändern ("zu tief ist wonky")
+        //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
+        //TODO evtl -> weitere updates kaufen
+        // upgrades in liste tun und damit arbeiten (Ballon als höchste priorität)
 
         // check if there's a path you can follow
         if(way.size() > 0) {
