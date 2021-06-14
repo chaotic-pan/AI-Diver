@@ -2,6 +2,7 @@ package s0574186_s0573682;
 import lenz.htw.ai4g.ai.*;
 import java.awt.*;
 import java.awt.geom.Path2D;
+import java.lang.reflect.Array;
 import java.util.*;
 
 
@@ -118,27 +119,31 @@ public class myAI extends AI {
 
         //TODO TRASHWAY ____________________________________________________________________________________
         int currentFortune = info.getFortune();
+        Point currentTrash = getClosestTrash(pos);
+        Point shopPos = new Point(info.getScene().getShopPosition(), 0);
+        if (currentFortune > lastFortune) {
+            openTrash.remove(currentTrash);
+            lastFortune = currentFortune;
+            trashWay.clear();
+            currentTrash = getClosestTrash(pos);
+        }
         if (currentFortune < 2 && !airUpgrade) {
-            if (currentFortune > lastFortune) {
-                openTrash.remove(getClosestTrash(pos));
-                lastFortune = currentFortune;
-                trashWay.clear();
-            }
             if (trashWay.size() == 0) {
-                trashWay = quickestWay(getClosestNode(pos), getClosestNode(getClosestTrash(pos)));
+                trashWay = quickestWay(getClosestNode(pos), getClosestNode(currentTrash));
             }
-            return followPath(trashWay);
+            return followPath(trashWay, currentTrash);
 
 
         } else if(currentFortune == 2){
             //TODO boat thing add to trashway
             if(pos.x == info.getScene().getShopPosition() && pos.y == 0){
                 airUpgrade = true;
+                return new ShoppingAction(ShoppingItem.BALLOON_SET);
             }
             if (trashWay.size() == 0) {
-                trashWay = quickestWay(getClosestNode(pos), getClosestNode(new Point(info.getScene().getShopPosition(), 0)));
+                trashWay = quickestWay(getClosestNode(pos), getClosestNode(shopPos));
             }
-            return followPath(trashWay);
+            return followPath(trashWay, shopPos);
         }
 
 
@@ -147,7 +152,7 @@ public class myAI extends AI {
 
         // check if there's a path you can follow
         if(way.size() > 0) {
-            return followPath(way);
+            return followPath(way, pearls.get(0));
         }
 
         // else, check if you can go there straight
@@ -163,7 +168,7 @@ public class myAI extends AI {
         return new DivingAction(velocity, direction);
     }
 
-    private DivingAction followPath (ArrayList<Node> nodeWay) {
+    private DivingAction followPath (ArrayList<Node> nodeWay, Point goal) {
         float direction;
         float velocity = info.getMaxVelocity();
             // if ya can go straight to the next waypoint, skip the current
@@ -171,12 +176,13 @@ public class myAI extends AI {
                 nodeWay.remove(0);
             }
             // if ya close enough to the next waypoint, ya can remove it
-            if (nodeWay.size() > 0 && getDistance(pos, nodeWay.get(0).coordinates) < 10) {
+            if (nodeWay.size() > 1 && getDistance(pos, nodeWay.get(0).coordinates) < 10) {
                 nodeWay.remove(0);
             }
             // now, if there's still path left, follow it
             if (nodeWay.size() > 0) {
                 direction = seek(pos, nodeWay.get(0).coordinates);
+                if (pathFree(pos,goal)) direction = seek(pos, goal);
                 return new DivingAction(velocity, direction);
             }
         return null;
@@ -190,17 +196,11 @@ public class myAI extends AI {
         else return coeff;
     }
 
-    //get closest Pearl
-    //ArrayList<Point> pearls =  new ArrayList<>(Arrays.asList(info.getScene().getPearl()));
-    //goal = getPearl(pos);
     private Point getClosestTrash(Point pos) {
-        Point[] trashPos = info.getScene().getRecyclingProducts();
-        //if (pos==null) pos = new Point(info.getScene().getWidth()/2, 0);
-
         float distance = Integer.MAX_VALUE;
         Point closest = null;
 
-        for (Point trash : trashPos) {
+        for (Point trash : openTrash) {
             float dis = getDistance(pos, trash);
             if (dis < distance) {
                 closest = trash;
