@@ -68,7 +68,7 @@ public class myAI2 extends AI {
             }
         }
         if (air < Math.abs(pearls.get(0).y*deep())+getDistance(pos, pearls.get(0)) && pos.x != pearls.get(0).x && pos.y==0) {
-           // TODO make a getSurface meth, for when there's a obs in da way
+           //  make a getSurface meth, for when there's a obs in da way
             direction = seek(pos, new Point(pearls.get(0).x, 0));
             return new DivingAction(velocity,direction);
         }

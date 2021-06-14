@@ -63,9 +63,9 @@ public class myAI extends AI {
         float air = info.getAir();
 
         // if a pearl got collected
-        if (info.getScore() > lastScore){
+        if (info.getScore() > lastScore) {
             //check which pearl it was and remove from queues
-            for (int i=0; i<openPearls.size(); i++) {
+            for (int i = 0; i < openPearls.size(); i++) {
                 float d = getDistance(pos, pearls.get(i));
                 if (d < 20) {
                     lastPearl = openPearls.get(i);
@@ -78,7 +78,7 @@ public class myAI extends AI {
             lastScore = info.getScore();
 
             //look if there is enough air to get to the next pearl
-            if (air < Math.abs(openPearls.get(0).topCost*deep())+getDistance(pos, pearls.get(0))) {
+            if (air < Math.abs(openPearls.get(0).topCost * deep()) + getDistance(pos, pearls.get(0))) {
                 //if not swim up
                 airWay = lastPearl.topPath;
             }
@@ -87,13 +87,13 @@ public class myAI extends AI {
         info.getMaxAir();
 
         // stick to the surface.....?
-        if (airUpgrade && air < Math.abs(pearls.get(0).y*deep())+getDistance(pos, pearls.get(0)) && getDistance(pos,openPearls.get(0).top.coordinates) > 10 && pos.y==0) {
+        if (airUpgrade && air < Math.abs(pearls.get(0).y * deep()) + getDistance(pos, pearls.get(0)) && getDistance(pos, openPearls.get(0).top.coordinates) > 10 && pos.y == 0) {
             direction = seek(pos, openPearls.get(0).top.coordinates);
-            return new DivingAction(velocity,direction);
+            return new DivingAction(velocity, direction);
         }
 
-        if (air < Math.abs(pos.y*deep()) && airWay.size()==0) {
-            airWay = quickestWay(getClosestNode(pos),getClosestNode(new Point(pos.x, 0)));
+        if (air < Math.abs(pos.y * deep()) && airWay.size() == 0) {
+            airWay = quickestWay(getClosestNode(pos), getClosestNode(new Point(pos.x, 0)));
         }
 
         if (airWay.size() > 0) {
@@ -116,17 +116,34 @@ public class myAI extends AI {
             way = quickestWay(getClosestNode(pos), openPearls.get(0));
         }
 
+        //TODO TRASHWAY ____________________________________________________________________________________
         int currentFortune = info.getFortune();
-        if(currentFortune < 2 ) {
-            if(currentFortune > lastFortune) {
+        if (currentFortune < 2 && !airUpgrade) {
+            if (currentFortune > lastFortune) {
                 openTrash.remove(getClosestTrash(pos));
                 lastFortune = currentFortune;
+                trashWay.clear();
             }
-            if(trashWay.size() == 0) {
+            if (trashWay.size() == 0) {
                 trashWay = quickestWay(getClosestNode(pos), getClosestNode(getClosestTrash(pos)));
             }
             return followPath(trashWay);
+
+
+        } else if(currentFortune == 2){
+            //TODO boat thing add to trashway
+            if(pos.x == info.getScene().getShopPosition() && pos.y == 0){
+                airUpgrade = true;
+            }
+            if (trashWay.size() == 0) {
+                trashWay = quickestWay(getClosestNode(pos), getClosestNode(new Point(info.getScene().getShopPosition(), 0)));
+            }
+            return followPath(trashWay);
         }
+
+
+
+
 
         // check if there's a path you can follow
         if(way.size() > 0) {
@@ -485,7 +502,7 @@ public class myAI extends AI {
         return way;
     }
 
-    //TODO maybe wanna use A* instead
+
     private void dijkstra(Node start, Node goal) {
         ArrayList<Node> Q = new ArrayList<>();
         ArrayList<Node> F = new ArrayList<>();
