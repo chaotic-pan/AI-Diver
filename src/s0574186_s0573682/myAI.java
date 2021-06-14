@@ -93,7 +93,7 @@ public class myAI extends AI {
         }
 
         if (air < Math.abs(pos.y*deep()) && airWay.size()==0) {
-            airWay = lastPearl.topPath;
+            airWay = quickestWay(getClosestNode(pos),getClosestNode(new Point(pos.x, 0)));
         }
 
         if (airWay.size() > 0) {
@@ -116,14 +116,14 @@ public class myAI extends AI {
             way = quickestWay(getClosestNode(pos), openPearls.get(0));
         }
 
-        //way wird überschrieben aber es wird in die schleife gegriffen
         int currentFortune = info.getFortune();
         if(currentFortune < 2 ) {
-
-            trashWay = quickestWay(getClosestNode(pos), getClosestNode(getClosestTrash(pos)));
             if(currentFortune > lastFortune) {
-                trashWay.remove(getClosestTrash(pos));
+                openTrash.remove(getClosestTrash(pos));
                 lastFortune = currentFortune;
+            }
+            if(trashWay.size() == 0) {
+                trashWay = quickestWay(getClosestNode(pos), getClosestNode(getClosestTrash(pos)));
             }
             return followPath(trashWay);
         }
@@ -160,7 +160,6 @@ public class myAI extends AI {
             // now, if there's still path left, follow it
             if (nodeWay.size() > 0) {
                 direction = seek(pos, nodeWay.get(0).coordinates);
-                if (pathFree(pos, pearls.get(0))) direction = seek(pos, pearls.get(0));
                 return new DivingAction(velocity, direction);
             }
         return null;
