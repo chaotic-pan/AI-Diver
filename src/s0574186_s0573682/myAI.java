@@ -226,44 +226,10 @@ public class myAI extends AI {
     private  ArrayList<Node> sortPearls() {
         ArrayList<Point> pearls = new ArrayList<>(Arrays.asList(info.getScene().getPearl()));
         Point[] sortedPearls = new Point[pearls.size()];
-        int w = 0;
-        ArrayList<Point> deeps = new ArrayList<>();
 
-
-        // all <-693
-        for (int i=0; i<sortedPearls.length; i++) {
-            if (pearls.get(i).y<=-694) {
-                deeps.add(pearls.get(i));
-            }
-        }
-
-        // sort deeps from left to right
-        int amountDeepPearls = deeps.size();
-        for (int i=0; i<amountDeepPearls; i++) {
-            double x = 0;
-            int closest = 0;
-            for (int j=0; j<deeps.size(); j++) {
-                if (deeps.get(j).x>x) {
-                    x = deeps.get(j).x;
-                    closest = j;
-                }
-            }
-            sortedPearls[sortedPearls.length-1-w] = deeps.get(closest);
-            pearls.remove(deeps.get(closest));
-            deeps.remove(closest);
-            w++;
-        }
-
-        //get average deeps.x
-        float av = 0;
-        for (int i=0; i<w; i++) {
-            av+=sortedPearls[sortedPearls.length-1-i].x;
-        }
-        av/=w;
-
-        if (av >= info.getScene().getWidth()/2f) {
+        if (info.getScene().getShopPosition() <= info.getScene().getWidth()/2f) {
             // if deep are more on the right side, sort l->r
-            for (int i=0; i<sortedPearls.length-w; i++) {
+            for (int i=0; i<sortedPearls.length; i++) {
                 double x = Integer.MAX_VALUE;
                 int closest = 0;
                 for (int j=0; j<pearls.size(); j++) {
@@ -277,7 +243,7 @@ public class myAI extends AI {
             }
         } else {
             // if deep are more on the left side, sort r->l
-            for (int i=0; i<sortedPearls.length-w; i++) {
+            for (int i=0; i<sortedPearls.length; i++) {
                 double x = 0;
                 int closest = 0;
                 for (int j=0; j<pearls.size(); j++) {
