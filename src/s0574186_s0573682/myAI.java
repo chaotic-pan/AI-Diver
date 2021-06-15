@@ -12,16 +12,17 @@ public class myAI extends AI {
     Point pos;
     int lastScore = 0;
     int lastFortune = 0;
-    Node[][] graph;
     Node lastPearl;
+    Node[][] graph;
     ArrayList<Point> pearls = new ArrayList<>();
     ArrayList<Node> openPearls;
-    ArrayList<Node> way = new ArrayList<>(0);
-    ArrayList<Node> airWay = new ArrayList<>(0);
-    ArrayList<Node> trashWay = new ArrayList<>(0);
+    ArrayList<Node> way = new ArrayList<>();
+    ArrayList<Node> airWay = new ArrayList<>();
+    ArrayList<Node> trashWay = new ArrayList<>();
     ArrayList<Point> openTrash;
+    Point shopPos;
     boolean airUpgrade = false;
-
+    ArrayList<ShoppingItem> shoppingItems  = new ArrayList<>();
 
 
     public myAI(Info info) {
@@ -33,6 +34,12 @@ public class myAI extends AI {
         System.out.println("Filled Array in " + arrayFillTime + "ms");
         openPearls = sortPearls();
         openTrash = new ArrayList<>(Arrays.asList(info.getScene().getRecyclingProducts()));
+        shopPos = new Point(info.getScene().getShopPosition(), 0);
+
+        shoppingItems.add(ShoppingItem.BALLOON_SET);
+        shoppingItems.add(ShoppingItem.CORNER_CUTTER);
+        shoppingItems.add(ShoppingItem.MOTORIZED_FLIPPERS);
+        shoppingItems.add(ShoppingItem.STREAMLINED_WIG);
     }
 
     @Override
@@ -45,18 +52,8 @@ public class myAI extends AI {
         return new Color(138, 116, 88);
         //return new Color(44, 130, 129);
     }
-    // BALLOON_SET
-    // STREAMLINED_WIG
-    // MOTORIZED_FLIPPERS
-    // CORNER_CUTTER
 
-    // 1 D58o9E4Qif avz
-    // 2 eaeIxGwdVa yo
-    // 3 07pGyuCN4mE T5ODOIjpTv
-    // 4 fljn8vd0qW 6dY8fXG1gr
-
-
-    @Override
+     @Override
     public PlayerAction update() {
         pos = new Point(info.getX(), info.getY());
         float velocity = info.getMaxVelocity(); //Geschwindigkeit
@@ -120,7 +117,6 @@ public class myAI extends AI {
         //TODO TRASHWAY ____________________________________________________________________________________
         int currentFortune = info.getFortune();
         Point currentTrash = getClosestTrash(pos);
-        Point shopPos = new Point(info.getScene().getShopPosition(), 0);
         if (currentFortune > lastFortune) {
             openTrash.remove(currentTrash);
             lastFortune = currentFortune;
@@ -134,10 +130,11 @@ public class myAI extends AI {
             return followPath(trashWay, currentTrash);
 
 
-        } else if(currentFortune == 2 && !airUpgrade){
+        } else if(currentFortune == 2){
             if(pos.x == info.getScene().getShopPosition() && pos.y == 0){
                 airUpgrade = true;
-                return new ShoppingAction(ShoppingItem.BALLOON_SET);
+                ShoppingItem item = shoppingItems.remove(0);
+                return new ShoppingAction(item);
             }
             if (trashWay.size() == 0) {
                 trashWay = quickestWay(getClosestNode(pos), getClosestNode(shopPos));
@@ -146,9 +143,17 @@ public class myAI extends AI {
         }
 
         //TODO Reihenfolge der Perlen ändern ("zu tief ist wonky")
+        // sort the pearls according to shopPos
+        // Shop more left: pearls left-->right / Shop more right: pearls r-->l)
+
         //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
-        //TODO evtl -> weitere updates kaufen
-        // upgrades in liste tun und damit arbeiten (Ballon als höchste priorität)
+
+        //TODO might wanna get the two closest trash from the shop instead of from current pos
+
+        //TODO  merge trashWay and way into one var
+
+        //TODO check if theres a trash really close by, then go there
+        // maybe then don't go DIRECTLY to the shop, if the next pearl is quite close
 
         // check if there's a path you can follow
         if(way.size() > 0) {
