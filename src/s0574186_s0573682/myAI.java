@@ -19,6 +19,7 @@ public class myAI extends AI {
     ArrayList<Node> way = new ArrayList<>();
     ArrayList<Node> airWay = new ArrayList<>();
     ArrayList<Node> trashWay = new ArrayList<>();
+    ArrayList<Point> currentTrash = new ArrayList<>();
     ArrayList<Point> openTrash;
     Point shopPos;
     boolean airUpgrade = false;
@@ -28,14 +29,24 @@ public class myAI extends AI {
     public myAI(Info info) {
         super(info);
         enlistForTournament(574186, 573682);
+        // first we'll build the graph
         long time = System.currentTimeMillis();
         graph = buildGraph();
         long arrayFillTime = System.currentTimeMillis() - time;
         System.out.println("Filled Array in " + arrayFillTime + "ms");
+        // now we'll get all the pearls and trash
         openPearls = sortPearls();
         openTrash = new ArrayList<>(Arrays.asList(info.getScene().getRecyclingProducts()));
+        // also init the shop position
         shopPos = new Point(info.getScene().getShopPosition(), 0);
-
+        // now we'll get the two trash closest to the shop which we'll collect first0
+        Point t = getClosestTrash(shopPos);
+        currentTrash.add(t);
+        openTrash.remove(t);
+        t = getClosestTrash(shopPos);
+        currentTrash.add(0, t);
+        openTrash.remove(t);
+        // and set the order of upgrades
         shoppingItems.add(ShoppingItem.BALLOON_SET);
         shoppingItems.add(ShoppingItem.CORNER_CUTTER);
         shoppingItems.add(ShoppingItem.MOTORIZED_FLIPPERS);
@@ -116,18 +127,18 @@ public class myAI extends AI {
 
         //TODO TRASHWAY ____________________________________________________________________________________
         int currentFortune = info.getFortune();
-        Point currentTrash = getClosestTrash(pos);
-        if (currentFortune > lastFortune) {
-            openTrash.remove(currentTrash);
+
+         if (currentFortune > lastFortune) {
+            openTrash.remove(currentTrash.get(0));
+            currentTrash.remove(0);
             lastFortune = currentFortune;
             trashWay.clear();
-            currentTrash = getClosestTrash(pos);
         }
         if (currentFortune < 2 && !airUpgrade) {
             if (trashWay.size() == 0) {
-                trashWay = quickestWay(getClosestNode(pos), getClosestNode(currentTrash));
+                trashWay = quickestWay(getClosestNode(pos), getClosestNode(currentTrash.get(0)));
             }
-            return followPath(trashWay, currentTrash);
+            return followPath(trashWay, currentTrash.get(0));
 
 
         } else if(currentFortune == 2){
@@ -147,8 +158,6 @@ public class myAI extends AI {
         // Shop more left: pearls left-->right / Shop more right: pearls r-->l)
 
         //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
-
-        //TODO might wanna get the two closest trash from the shop instead of from current pos
 
         //TODO  merge trashWay and way into one var
 
