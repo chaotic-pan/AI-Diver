@@ -47,9 +47,9 @@ public class myAI extends AI {
         openTrash.remove(t);
         // and set the order of upgrades
         shoppingItems.add(ShoppingItem.BALLOON_SET);
+        shoppingItems.add(ShoppingItem.STREAMLINED_WIG);
         shoppingItems.add(ShoppingItem.CORNER_CUTTER);
         shoppingItems.add(ShoppingItem.MOTORIZED_FLIPPERS);
-        shoppingItems.add(ShoppingItem.STREAMLINED_WIG);
     }
 
     @Override
@@ -69,6 +69,7 @@ public class myAI extends AI {
         float velocity = info.getMaxVelocity(); //Geschwindigkeit
         float direction;
         float air = info.getAir();
+        int currentFortune = info.getFortune();
 
         // if a pearl got collected
         if (info.getScore() > lastScore) {
@@ -77,9 +78,10 @@ public class myAI extends AI {
                 float d = getDistance(pos, pearls.get(i));
                 if (d < 20) {
                     lastPearl = openPearls.get(i);
-                    way.remove(openPearls.get(i));
+                    way.remove(getClosestNode(openPearls.get(i).coordinates));
                     openPearls.remove(openPearls.get(i));
                     pearls.remove(i);
+                    if (i==0) way.clear();
                     break;
                 }
             }
@@ -91,8 +93,6 @@ public class myAI extends AI {
                 airWay = lastPearl.topPath;
             }
         }
-
-        info.getMaxAir();
 
         // stick to the surface.....?
         if (airUpgrade && air < Math.abs(pearls.get(0).y * deep()) + getDistance(pos, pearls.get(0)) && getDistance(pos, openPearls.get(0).top.coordinates) > 10 && pos.y == 0) {
@@ -121,29 +121,33 @@ public class myAI extends AI {
             }
             // if ya got yer air back, we now need a new path to the pearl
             way.clear();
-            way = quickestWay(getClosestNode(pos), openPearls.get(0));
+            //way = quickestWay(getClosestNode(pos), openPearls.get(0));
         }
 
         //TODO TRASHWAY ____________________________________________________________________________________
-        int currentFortune = info.getFortune();
-
-         if (currentFortune > lastFortune) {
-            openTrash.remove(currentTrash.get(0));
-            currentTrash.remove(0);
+        if (currentFortune < lastFortune) lastFortune=currentFortune;
+        if (currentFortune > lastFortune) {
+            if (currentTrash.size() != 0) {
+                openTrash.remove(currentTrash.get(0));
+                currentTrash.remove(0);
+                way.clear();
+            }
             lastFortune = currentFortune;
-            way.clear();
         }
         if (currentFortune < 2 && !airUpgrade) {
+            if (currentTrash.size() < 2) {
+                currentTrash.add(getClosestTrash(pos));
+            }
             if (way.size() == 0) {
                 way = quickestWay(getClosestNode(pos), getClosestNode(currentTrash.get(0)));
             }
             return followPath(way, currentTrash.get(0));
 
-
         } else if(currentFortune >= 2){
             if(pos.x == info.getScene().getShopPosition() && pos.y == 0){
                 airUpgrade = true;
                 ShoppingItem item = shoppingItems.remove(0);
+                way.clear();
                 return new ShoppingAction(item);
             }
             if (way.size() == 0) {
@@ -172,7 +176,7 @@ public class myAI extends AI {
         } // if ya can't get there and there's no path, make one
         else {
             way = quickestWay(getClosestNode(pos), openPearls.get(0));
-            if (way.size() != 0) direction = seek(pos, way.get(0).coordinates);
+            if (way.size() != 0) return followPath(way,pearls.get(0));
             else  direction = seek(pos,pearls.get(0));
         }
 
@@ -193,7 +197,8 @@ public class myAI extends AI {
             // now, if there's still path left, follow it
             if (nodeWay.size() > 0) {
                 direction = seek(pos, nodeWay.get(0).coordinates);
-                if (pathFree(pos,goal)) direction = seek(pos, goal);
+                if (pathFree(pos,goal))
+                    direction = seek(pos, goal);
                 return new DivingAction(velocity, direction);
             }
         return null;
@@ -227,8 +232,8 @@ public class myAI extends AI {
         ArrayList<Point> pearls = new ArrayList<>(Arrays.asList(info.getScene().getPearl()));
         Point[] sortedPearls = new Point[pearls.size()];
 
-        if (info.getScene().getShopPosition() <= info.getScene().getWidth()/2f) {
-            // if deep are more on the right side, sort l->r
+        if (shopPos.x <= info.getScene().getWidth()/2f) {
+            // if shop is more on the right side, sort l->r
             for (int i=0; i<sortedPearls.length; i++) {
                 double x = Integer.MAX_VALUE;
                 int closest = 0;
