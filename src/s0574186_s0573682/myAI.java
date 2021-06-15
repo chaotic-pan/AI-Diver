@@ -18,7 +18,6 @@ public class myAI extends AI {
     ArrayList<Node> openPearls;
     ArrayList<Node> way = new ArrayList<>();
     ArrayList<Node> airWay = new ArrayList<>();
-    ArrayList<Node> trashWay = new ArrayList<>();
     ArrayList<Point> currentTrash = new ArrayList<>();
     ArrayList<Point> openTrash;
     Point shopPos;
@@ -132,25 +131,25 @@ public class myAI extends AI {
             openTrash.remove(currentTrash.get(0));
             currentTrash.remove(0);
             lastFortune = currentFortune;
-            trashWay.clear();
+            way.clear();
         }
         if (currentFortune < 2 && !airUpgrade) {
-            if (trashWay.size() == 0) {
-                trashWay = quickestWay(getClosestNode(pos), getClosestNode(currentTrash.get(0)));
+            if (way.size() == 0) {
+                way = quickestWay(getClosestNode(pos), getClosestNode(currentTrash.get(0)));
             }
-            return followPath(trashWay, currentTrash.get(0));
+            return followPath(way, currentTrash.get(0));
 
 
-        } else if(currentFortune == 2){
+        } else if(currentFortune >= 2){
             if(pos.x == info.getScene().getShopPosition() && pos.y == 0){
                 airUpgrade = true;
                 ShoppingItem item = shoppingItems.remove(0);
                 return new ShoppingAction(item);
             }
-            if (trashWay.size() == 0) {
-                trashWay = quickestWay(getClosestNode(pos), getClosestNode(shopPos));
+            if (way.size() == 0) {
+                way = quickestWay(getClosestNode(pos), getClosestNode(shopPos));
             }
-            return followPath(trashWay, shopPos);
+            return followPath(way, shopPos);
         }
 
         //TODO Reihenfolge der Perlen ändern ("zu tief ist wonky")
@@ -158,8 +157,6 @@ public class myAI extends AI {
         // Shop more left: pearls left-->right / Shop more right: pearls r-->l)
 
         //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
-
-        //TODO  merge trashWay and way into one var
 
         //TODO check if theres a trash really close by, then go there
         // maybe then don't go DIRECTLY to the shop, if the next pearl is quite close
