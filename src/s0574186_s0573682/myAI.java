@@ -33,11 +33,11 @@ public class myAI extends AI {
         graph = buildGraph();
         long arrayFillTime = System.currentTimeMillis() - time;
         System.out.println("Filled Array in " + arrayFillTime + "ms");
+        // also init the shop position
+        shopPos = new Point(info.getScene().getShopPosition(), 0);
         // now we'll get all the pearls and trash
         openPearls = sortPearls();
         openTrash = new ArrayList<>(Arrays.asList(info.getScene().getRecyclingProducts()));
-        // also init the shop position
-        shopPos = new Point(info.getScene().getShopPosition(), 0);
         // now we'll get the two trash closest to the shop which we'll collect first0
         Point t = getClosestTrash(shopPos);
         currentTrash.add(t);
@@ -59,7 +59,7 @@ public class myAI extends AI {
 
     @Override
     public Color getColor() {
-        return new Color(138, 116, 88);
+        return new Color(129, 212, 103);
         //return new Color(44, 130, 129);
     }
 
@@ -125,16 +125,27 @@ public class myAI extends AI {
         }
 
         //TODO TRASHWAY ____________________________________________________________________________________
+         //todo fix issue with collecting closest pearls in wrong order
         if (currentFortune < lastFortune) lastFortune=currentFortune;
         if (currentFortune > lastFortune) {
+            //if coin amount went up and there more trash to collect
             if (currentTrash.size() != 0) {
-                openTrash.remove(currentTrash.get(0));
-                currentTrash.remove(0);
-                way.clear();
+                //remove it from any and all lists so it is ignored
+                for(int i = 0; i < currentTrash.size(); i++) {
+                    float trashDist = getDistance(pos, currentTrash.get(i));
+                    if(trashDist < 20){
+                        openTrash.remove(currentTrash.get(i));
+                        currentTrash.remove(i);
+                        way.clear();
+                        break;
+                    }
+                }
+
             }
             lastFortune = currentFortune;
         }
         if (currentFortune < 2 && !airUpgrade) {
+
             if (currentTrash.size() < 2) {
                 currentTrash.add(getClosestTrash(pos));
             }
@@ -143,7 +154,9 @@ public class myAI extends AI {
             }
             return followPath(way, currentTrash.get(0));
 
-        } else if(currentFortune >= 2){
+        }
+
+        else if(currentFortune >= 2){
             if(pos.x == info.getScene().getShopPosition() && pos.y == 0){
                 airUpgrade = true;
                 ShoppingItem item = shoppingItems.remove(0);
@@ -156,14 +169,12 @@ public class myAI extends AI {
             return followPath(way, shopPos);
         }
 
-        //TODO Reihenfolge der Perlen ändern ("zu tief ist wonky")
-        // sort the pearls according to shopPos
-        // Shop more left: pearls left-->right / Shop more right: pearls r-->l)
 
         //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
 
         //TODO check if theres a trash really close by, then go there
         // maybe then don't go DIRECTLY to the shop, if the next pearl is quite close
+        //TODO if there are only two pearls left ignore the upgrade and just chuck it
 
         // check if there's a path you can follow
         if(way.size() > 0) {
@@ -205,7 +216,7 @@ public class myAI extends AI {
     }
 
     private float deep() {
-        float coeff = 0.72f;
+        float coeff = 0.75f;
         if (openPearls.size() == 1) {
             return 0;
         }
