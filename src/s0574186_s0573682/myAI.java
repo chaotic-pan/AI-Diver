@@ -7,7 +7,7 @@ import java.util.*;
 
 
 public class myAI extends AI {
-
+    // DVKuHAlgyD MFRC6hpyNB
 
     Point pos;
     int lastScore = 0;
@@ -18,10 +18,9 @@ public class myAI extends AI {
     ArrayList<Node> openPearls;
     ArrayList<Node> way = new ArrayList<>();
     ArrayList<Node> airWay = new ArrayList<>();
-    ArrayList<Point> currentTrash = new ArrayList<>();
+    Point currentTrash;
     ArrayList<Point> openTrash;
     Point shopPos;
-    boolean airUpgrade = false;
     ArrayList<ShoppingItem> shoppingItems  = new ArrayList<>();
 
 
@@ -38,13 +37,9 @@ public class myAI extends AI {
         // now we'll get all the pearls and trash
         openPearls = sortPearls();
         openTrash = new ArrayList<>(Arrays.asList(info.getScene().getRecyclingProducts()));
-        // now we'll get the two trash closest to the shop which we'll collect first0
-        Point t = getClosestTrash(shopPos);
-        currentTrash.add(t);
-        openTrash.remove(t);
-        t = getClosestTrash(shopPos);
-        currentTrash.add(0, t);
-        openTrash.remove(t);
+        // get the closest trash which we'll collect first
+        currentTrash = getClosestTrash(new Point(info.getScene().getWidth()/2,0));
+        openTrash.remove(currentTrash);
         // and set the order of upgrades
         shoppingItems.add(ShoppingItem.BALLOON_SET);
         shoppingItems.add(ShoppingItem.STREAMLINED_WIG);
@@ -94,16 +89,24 @@ public class myAI extends AI {
             }
         }
 
-        // stick to the surface.....?
-        if (airUpgrade && air < Math.abs(pearls.get(0).y * deep()) + getDistance(pos, pearls.get(0)) && getDistance(pos, openPearls.get(0).top.coordinates) > 10 && pos.y == 0) {
+         //look if there is enough air to get to the next trash
+         if (currentTrash != null) {
+             if (airWay.size()==0 && air < Math.abs(currentTrash.y * deep()) + getDistance(pos, currentTrash)) {
+                 //if not swim up
+                 airWay = quickestWay(pos, new Point(pos.x, 0));
+             }
+         }
+
+         // stick to the surface.....?
+        if (shoppingItems.size()<=2 && air < Math.abs(pearls.get(0).y * deep()) + getDistance(pos, pearls.get(0)) && getDistance(pos, openPearls.get(0).top.coordinates) > 10 && pos.y == 0) {
             direction = seek(pos, openPearls.get(0).top.coordinates);
             return new DivingAction(velocity, direction);
         }
-
+        // get an airWay, if ya too deep down
         if (air < Math.abs(pos.y * deep()) && airWay.size() == 0) {
-            airWay = quickestWay(getClosestNode(pos), getClosestNode(new Point(pos.x, 0)));
+            airWay = quickestWay(pos, new Point(pos.x, 0));
         }
-
+        //follow airWay
         if (airWay.size() > 0) {
             // while next is direct reachable, yeet the current
             while (way.size() > 1 && pathFree(pos, way.get(1).coordinates)) {
@@ -121,60 +124,80 @@ public class myAI extends AI {
             }
             // if ya got yer air back, we now need a new path to the pearl
             way.clear();
-            //way = quickestWay(getClosestNode(pos), openPearls.get(0));
+            // also we might need a new closest Trash
+            currentTrash = null;
         }
+
 
         //TODO TRASHWAY ____________________________________________________________________________________
          //todo fix issue with collecting closest pearls in wrong order
-        if (currentFortune < lastFortune) lastFortune=currentFortune;
-        if (currentFortune > lastFortune) {
-            //if coin amount went up and there more trash to collect
-            if (currentTrash.size() != 0) {
-                //remove it from any and all lists so it is ignored
-                for(int i = 0; i < currentTrash.size(); i++) {
-                    float trashDist = getDistance(pos, currentTrash.get(i));
-                    if(trashDist < 20){
-                        openTrash.remove(currentTrash.get(i));
-                        currentTrash.remove(i);
-                        way.clear();
-                        break;
-                    }
-                }
+         //in case we got hit by a fish, then we loose a fortune
+         if (currentFortune < lastFortune) lastFortune=currentFortune;
+         //if collect a trash
+         if (currentFortune > lastFortune) {
+             // if it was on purpose NICE
+             if (currentTrash != null) {
+                     currentTrash = null;
+                     way.clear();
+             } else {
+                 // if not we gotta check which it was
+                 for (int i=0; i<openTrash.size(); i++) {
+                     float d = getDistance(pos, openTrash.get(i));
+                     if (d<20) {
+                         openTrash.remove(i);
+                         break;
+                     }
+                 }
+             }
+             lastFortune = currentFortune;
+         }
 
-            }
-            lastFortune = currentFortune;
-        }
-        if (currentFortune < 2 && !airUpgrade) {
+         // let's buy some SHITT!!!!!
+         if (currentFortune >= 2 && getDistance(pos, shopPos) < 2) {
+             ShoppingItem item = shoppingItems.remove(0);
+             way.clear();
+             return new ShoppingAction(item);
+         }
 
-            if (currentTrash.size() < 2) {
-                currentTrash.add(getClosestTrash(pos));
-            }
-            if (way.size() == 0) {
-                way = quickestWay(getClosestNode(pos), getClosestNode(currentTrash.get(0)));
-            }
-            return followPath(way, currentTrash.get(0));
+         // if we havn't bought the 2 up's yet
+         if (shoppingItems.size()>2) {
+             //if we have enough monayy yet, get way to da shop
+             if (currentFortune >= 4) {
+                 //look if there is enough air to get to the shop
+                 if (air < Math.abs(getDistance(pos, shopPos))) {
+                     //if not swim up
+                     airWay = quickestWay(pos, new Point(pos.x, 0));
+                 }
 
-        }
+                 if (way.size() == 0) {
+                     way = quickestWay(pos, shopPos);
+                 }
+                 return followPath(way, shopPos);
+             } // else we need to collect more Trash
+             // so check if we still have a currentTrash (else find one)
+             else if (currentTrash == null) {
+                 currentTrash = getClosestTrash(pos);
+                 openTrash.remove(currentTrash);
+             } //now get to the next Trash
+             else {
+                 if (way.size() == 0) {
+                     way = quickestWay(pos, currentTrash);
+                 }
+                 return followPath(way, currentTrash);
+             }
+         }
 
-        else if(currentFortune >= 2){
-            if(pos.x == info.getScene().getShopPosition() && pos.y == 0){
-                airUpgrade = true;
-                ShoppingItem item = shoppingItems.remove(0);
-                way.clear();
-                return new ShoppingAction(item);
-            }
-            if (way.size() == 0) {
-                way = quickestWay(getClosestNode(pos), getClosestNode(shopPos));
-            }
-            return followPath(way, shopPos);
-        }
-
+         // for teh rest of the up's
+         if(currentFortune >= 2 && openPearls.size() > 2){
+             way.clear();
+             way = quickestWay(pos, shopPos);
+             return followPath(way, shopPos);
+         }
 
         //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
 
         //TODO check if theres a trash really close by, then go there
         // maybe then don't go DIRECTLY to the shop, if the next pearl is quite close
-        //TODO if there are only two pearls left ignore the upgrade and just chuck it
 
         // check if there's a path you can follow
         if(way.size() > 0) {
@@ -216,11 +239,13 @@ public class myAI extends AI {
     }
 
     private float deep() {
-        float coeff = 0.75f;
         if (openPearls.size() == 1) {
             return 0;
         }
-        else return coeff;
+        if (shoppingItems.size() <=2) {
+            return 0.4f;
+        }
+        return  0.77f;
     }
 
     private Point getClosestTrash(Point pos) {
@@ -349,8 +374,6 @@ public class myAI extends AI {
         if (pathFree(pearl, top)) {
             path.add(topNode);
         } else {
-            //path = quickestWay(getClosestNode(pearl), getClosestNode(top));
-
             dijkstra(topNode, pearlNode);
             Node v = pearlNode;
             while (v != topNode) {
@@ -473,6 +496,10 @@ public class myAI extends AI {
         }
 
         return graph[x][y];
+    }
+
+    private ArrayList<Node> quickestWay(Point start, Point goal) {
+        return quickestWay(getClosestNode(start), getClosestNode(goal));
     }
 
     private ArrayList<Node> quickestWay(Node start, Node goal) {
