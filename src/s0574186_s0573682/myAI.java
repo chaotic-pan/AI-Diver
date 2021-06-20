@@ -89,6 +89,15 @@ public class myAI extends AI {
             }
         }
 
+        //if there is only 2 pearls left and they're very close together, then go there and ignore everything?
+        if(openPearls.size() == 2 && getDistance(openPearls.get(0).coordinates,openPearls.get(1).coordinates) <= 100) {
+            airWay.clear();
+            way = quickestWay(getClosestNode(pos), openPearls.get(0));
+            if (way.size() != 0) return followPath(way,pearls.get(0));
+            else  direction = seek(pos,pearls.get(0));
+
+            return new DivingAction(velocity, direction);
+        }
          //look if there is enough air to get to the next trash
          if (currentTrash != null) {
              if (airWay.size()==0 && air < Math.abs(currentTrash.y * deep()) + getDistance(pos, currentTrash)) {
@@ -153,13 +162,19 @@ public class myAI extends AI {
              lastFortune = currentFortune;
          }
 
+         // TODO fired an out of bounds exeption on 08GznIfukC isFDMmm8Ui
+         // removed them without buying them?
          // let's buy some SHITT!!!!!
          if (currentFortune >= 2 && getDistance(pos, shopPos) < 5 && pos.y==0) {
              ShoppingItem item = shoppingItems.remove(0);
              way.clear();
              return new ShoppingAction(item);
          }
-
+         /*for (Node pearl : openPearls) {
+            if (getDistance(pos, pearl.coordinates) < 200) {
+                way = quickestWay(pos, pearl.coordinates);
+            }
+         }*/
          // if we havn't bought the 2 up's yet
          if (shoppingItems.size()>2) {
              //if we have enough monayy yet, get way to da shop
@@ -196,7 +211,7 @@ public class myAI extends AI {
 
         //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
 
-        //TODO check if theres a trash really close by, then go there
+        //TODO check if theres a trash really close by, then go there or a fucking pearl (like 50 pixels mate)
         // maybe then don't go DIRECTLY to the shop, if the next pearl is quite close
 
         // check if there's a path you can follow
@@ -245,6 +260,10 @@ public class myAI extends AI {
         if (shoppingItems.size() <=2) {
             return 0.4f;
         }
+        //if fish above pearl then higher thresh hold
+        /*if (fishInAirWay) {
+            return 0.8f;
+        }*/
         return  0.77f;
     }
 
@@ -295,6 +314,14 @@ public class myAI extends AI {
                 }
                 sortedPearls[i] = pearls.get(closest);
                 pearls.remove(closest);
+            }
+        }
+        for(Point firstPearl : sortedPearls) {
+            for(Point secondPearl : sortedPearls) {
+                if(getDistance(firstPearl,secondPearl) < 100){
+                    // TODO put them next to eachother
+
+                }
             }
         }
 
