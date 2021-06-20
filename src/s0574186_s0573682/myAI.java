@@ -22,6 +22,7 @@ public class myAI extends AI {
     Point currentTrash;
     ArrayList<Point> openTrash;
     Point shopPos;
+    Point[] fish;
     ArrayList<ShoppingItem> shoppingItems  = new ArrayList<>();
 
 
@@ -139,7 +140,6 @@ public class myAI extends AI {
 
 
         //TODO TRASHWAY ____________________________________________________________________________________
-         //todo fix issue with collecting closest pearls in wrong order
          //in case we got hit by a fish, then we loose a fortune
          if (currentFortune < lastFortune) lastFortune=currentFortune;
          //if collect a trash
@@ -162,7 +162,6 @@ public class myAI extends AI {
              lastFortune = currentFortune;
          }
 
-         // TODO fired an out of bounds exeption on 08GznIfukC isFDMmm8Ui
          // removed them without buying them?
          // let's buy some SHITT!!!!!
          if (currentFortune >= 2 && getDistance(pos, shopPos) < 5 && pos.y==0) {
@@ -176,7 +175,7 @@ public class myAI extends AI {
             }
          }*/
          // if we havn't bought the 2 up's yet
-         if (shoppingItems.size()>2) {
+         if (shoppingItems.size() > 2) {
              //if we have enough monayy yet, get way to da shop
              if (currentFortune >= 4) {
                  //look if there is enough air to get to the shop
@@ -260,10 +259,6 @@ public class myAI extends AI {
         if (shoppingItems.size() <=2) {
             return 0.4f;
         }
-        //if fish above pearl then higher thresh hold
-        /*if (fishInAirWay) {
-            return 0.8f;
-        }*/
         return  0.77f;
     }
 
@@ -316,19 +311,28 @@ public class myAI extends AI {
                 pearls.remove(closest);
             }
         }
-        for(Point firstPearl : sortedPearls) {
-            for(Point secondPearl : sortedPearls) {
-                if(getDistance(firstPearl,secondPearl) < 100){
-                    // TODO put them next to eachother
 
+        Point [] resortedPearls = new Point[sortedPearls.length];
+        for(int i = 0; i < sortedPearls.length; i++) {
+            if(i < sortedPearls.length - 2){
+                if(getDistance(sortedPearls[i].getLocation(), sortedPearls[i+2].getLocation()) < getDistance(sortedPearls[i].getLocation(), sortedPearls[i+1].getLocation())) {
+                    resortedPearls[i+1] = sortedPearls[i+2];
+                    resortedPearls[i+2] = sortedPearls[i+1];
+                    resortedPearls[i] = sortedPearls[i];
+                }
+                else {
+                    resortedPearls[i+1] = sortedPearls[i+1];
+                    resortedPearls[i+2] = sortedPearls[i+2];
+                    resortedPearls[i] = sortedPearls[i];
                 }
             }
+
         }
 
         ArrayList<Node> p = new ArrayList<>();
 
         // gonna find the closest Node for every Pearl
-        for (Point pearl: sortedPearls) {
+        for (Point pearl: resortedPearls) {
             this.pearls.add(pearl);
             Node n = getClosestNode(pearl);
             p.add(n);
