@@ -8,6 +8,7 @@ import java.util.*;
 
 public class myAI extends AI {
     // DVKuHAlgyD MFRC6hpyNB
+    // m5RTc5rzy4 7u1ixwVdwT
 
     Point pos;
     int lastScore = 0;
@@ -39,12 +40,11 @@ public class myAI extends AI {
         openTrash = new ArrayList<>(Arrays.asList(info.getScene().getRecyclingProducts()));
         // get the closest trash which we'll collect first
         currentTrash = getClosestTrash(new Point(info.getScene().getWidth()/2,0));
-        openTrash.remove(currentTrash);
         // and set the order of upgrades
         shoppingItems.add(ShoppingItem.BALLOON_SET);
         shoppingItems.add(ShoppingItem.STREAMLINED_WIG);
-        shoppingItems.add(ShoppingItem.CORNER_CUTTER);
         shoppingItems.add(ShoppingItem.MOTORIZED_FLIPPERS);
+        shoppingItems.add(ShoppingItem.CORNER_CUTTER);
     }
 
     @Override
@@ -137,8 +137,9 @@ public class myAI extends AI {
          if (currentFortune > lastFortune) {
              // if it was on purpose NICE
              if (currentTrash != null) {
-                     currentTrash = null;
-                     way.clear();
+                 openTrash.remove(currentTrash);
+                 currentTrash = null;
+                 way.clear();
              } else {
                  // if not we gotta check which it was
                  for (int i=0; i<openTrash.size(); i++) {
@@ -153,7 +154,7 @@ public class myAI extends AI {
          }
 
          // let's buy some SHITT!!!!!
-         if (currentFortune >= 2 && getDistance(pos, shopPos) < 2) {
+         if (currentFortune >= 2 && getDistance(pos, shopPos) < 5 && pos.y==0) {
              ShoppingItem item = shoppingItems.remove(0);
              way.clear();
              return new ShoppingAction(item);
@@ -177,7 +178,6 @@ public class myAI extends AI {
              // so check if we still have a currentTrash (else find one)
              else if (currentTrash == null) {
                  currentTrash = getClosestTrash(pos);
-                 openTrash.remove(currentTrash);
              } //now get to the next Trash
              else {
                  if (way.size() == 0) {
@@ -187,12 +187,12 @@ public class myAI extends AI {
              }
          }
 
-         // for teh rest of the up's
+         /*// for teh rest of the up's
          if(currentFortune >= 2 && openPearls.size() > 2){
              way.clear();
              way = quickestWay(pos, shopPos);
              return followPath(way, shopPos);
-         }
+         }*/
 
         //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
 
