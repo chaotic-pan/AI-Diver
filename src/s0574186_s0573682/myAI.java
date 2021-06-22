@@ -22,7 +22,6 @@ public class myAI extends AI {
     Point currentTrash;
     ArrayList<Point> openTrash;
     Point shopPos;
-    Point[] fish;
     ArrayList<ShoppingItem> shoppingItems  = new ArrayList<>();
 
 
@@ -42,10 +41,10 @@ public class myAI extends AI {
         // get the closest trash which we'll collect first
         currentTrash = getClosestTrash(new Point(info.getScene().getWidth()/2,0));
         // and set the order of upgrades
-        shoppingItems.add(ShoppingItem.BALLOON_SET);
         shoppingItems.add(ShoppingItem.STREAMLINED_WIG);
-        shoppingItems.add(ShoppingItem.MOTORIZED_FLIPPERS);
         shoppingItems.add(ShoppingItem.CORNER_CUTTER);
+        shoppingItems.add(ShoppingItem.MOTORIZED_FLIPPERS);
+        shoppingItems.add(ShoppingItem.BALLOON_SET);
     }
 
     @Override
@@ -162,7 +161,6 @@ public class myAI extends AI {
              lastFortune = currentFortune;
          }
 
-         // removed them without buying them?
          // let's buy some SHITT!!!!!
          if (currentFortune >= 2 && getDistance(pos, shopPos) < 5 && pos.y==0) {
              ShoppingItem item = shoppingItems.remove(0);
@@ -441,11 +439,14 @@ public class myAI extends AI {
                 } else {
                     if (x>0) {
                         //left x-1, y
-                        connectNodes(n , graph[x-1][y]);
+                        Node m = graph[x-1][y];
+                        Point p = new Point((n.coordinates.x+m.coordinates.x)/2,
+                                (n.coordinates.y+m.coordinates.y)/2);
+                        connectNodes(n, m, streamCheck(p));
                     }
                     if (y>0) {
                         //up x, y-1
-                        connectNodes(n , graph[x][y-1]);
+                        connectNodes(n , graph[x][y-1], 0);
                     }
                 }
                 graph[x][y] = n;
@@ -455,12 +456,40 @@ public class myAI extends AI {
         return graph;
     }
 
-    private void connectNodes(Node n, Node m){
+    private void connectNodes(Node n, Node m, int streamCheck){
         if (m.valid) {
             float dis= getDistance(n.coordinates, m.coordinates);
-            n.edges.put(m, dis);
-            m.edges.put(n, dis);
+            switch (streamCheck) {
+                case 0 -> {
+                    n.edges.put(m, dis);
+                    m.edges.put(n, dis);
+                }
+                case 1 -> {
+                    n.edges.put(m, dis/2);
+                    m.edges.put(n, dis*2);
+                }
+                case 2 -> {
+                    n.edges.put(m, dis*2);
+                    m.edges.put(n, dis/2);
+                }
+            }
         }
+    }
+
+    private int streamCheck(Point p){
+        Rectangle[] left = info.getScene().getStreamsToTheLeft();
+        Rectangle[] right = info.getScene().getStreamsToTheRight();
+        for (Rectangle stream : left) {
+            if (stream.intersects(p.x-3, p.y-3, 6, 6)) {
+                return 1;
+            }
+        }
+        for (Rectangle stream : right) {
+            if (stream.intersects(p.x-3, p.y-3, 6, 6)) {
+                return 2;
+            }
+        }
+        return 0;
     }
 
     private float getDistance(Point start, Point goal) {
