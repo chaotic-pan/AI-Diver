@@ -58,6 +58,9 @@ public class myAI extends AI {
         //return new Color(44, 130, 129);
     }
 
+
+    //TODO: change waypoint when thrown off by stream
+    //TODO: put streams into consideration
      @Override
     public PlayerAction update() {
         pos = new Point(info.getX(), info.getY());
@@ -138,7 +141,7 @@ public class myAI extends AI {
         }
 
 
-        //TODO TRASHWAY ____________________________________________________________________________________
+
          //in case we got hit by a fish, then we loose a fortune
          if (currentFortune < lastFortune) lastFortune=currentFortune;
          //if collect a trash
@@ -206,7 +209,7 @@ public class myAI extends AI {
              return followPath(way, shopPos);
          }*/
 
-        //TODO Air Path -> schauen ob fische im Weg sind und dementsprechend deep kooefizient ändern
+
 
         //TODO check if theres a trash really close by, then go there or a fucking pearl (like 50 pixels mate)
         // maybe then don't go DIRECTLY to the shop, if the next pearl is quite close
