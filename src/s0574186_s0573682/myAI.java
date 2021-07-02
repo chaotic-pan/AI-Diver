@@ -22,13 +22,19 @@ public class myAI extends AI {
     Point currentTrash;
     ArrayList<Point> openTrash;
     Point shopPos;
+    Rectangle[] left;
+    Rectangle[] right;
+
     ArrayList<ShoppingItem> shoppingItems  = new ArrayList<>();
 
 
     public myAI(Info info) {
         super(info);
         enlistForTournament(574186, 573682);
-        // first we'll build the graph
+        // first initialize the Stream Arrays
+        left = info.getScene().getStreamsToTheLeft();
+        right = info.getScene().getStreamsToTheRight();
+        // then we'll build the graph
         long time = System.currentTimeMillis();
         graph = buildGraph();
         long arrayFillTime = System.currentTimeMillis() - time;
@@ -37,6 +43,7 @@ public class myAI extends AI {
         shopPos = new Point(info.getScene().getShopPosition(), 0);
         // now we'll get all the pearls and trash
         openPearls = sortPearls();
+        info.getScene().getStreamsToTheRight();
         openTrash = new ArrayList<>(Arrays.asList(info.getScene().getRecyclingProducts()));
         // get the closest trash which we'll collect first
         currentTrash = getClosestTrash(new Point(info.getScene().getWidth()/2,0));
@@ -45,6 +52,7 @@ public class myAI extends AI {
         shoppingItems.add(ShoppingItem.CORNER_CUTTER);
         shoppingItems.add(ShoppingItem.MOTORIZED_FLIPPERS);
         shoppingItems.add(ShoppingItem.BALLOON_SET);
+
     }
 
     @Override
@@ -89,8 +97,12 @@ public class myAI extends AI {
             if (air < Math.abs(openPearls.get(0).topCost * deep()) + getDistance(pos, pearls.get(0))) {
                 //if not swim up
                 airWay = lastPearl.topPath;
+                if (pos.y != 0 && pathFree(pos, airWay.get(airWay.size()-1).coordinates) && air >= info.getMaxAir()) {
+                    return moveUpwards(velocity);
+                }
             }
         }
+        //i4xljGb8LQ TnfCEx6qoX
 
         //if there is only 2 pearls left and they're very close together, then go there and ignore everything?
         if(openPearls.size() == 2 && getDistance(openPearls.get(0).coordinates,openPearls.get(1).coordinates) <= 100) {
@@ -106,6 +118,9 @@ public class myAI extends AI {
              if (airWay.size()==0 && air < Math.abs(currentTrash.y * deep()) + getDistance(pos, currentTrash)) {
                  //if not swim up
                  airWay = quickestWay(pos, new Point(pos.x, 0));
+                 if (pos.y != 0 && pathFree(pos, airWay.get(airWay.size()-1).coordinates) && air >= info.getMaxAir()) {
+                     return moveUpwards(velocity);
+                 }
              }
          }
 
@@ -121,12 +136,13 @@ public class myAI extends AI {
         //follow airWay
         if (airWay.size() > 0) {
             // while next is direct reachable, yeet the current
+
             while (way.size() > 1 && pathFree(pos, way.get(1).coordinates)) {
-                way.remove(0);
+                    way.remove(0);
             }
             // if ya close enough to the next Node OR ya got yer air back --> yeet
             if ((airWay.size() > 1 && getDistance(pos, airWay.get(0).coordinates) < 10)
-                    || (airWay.size() == 1 && air == info.getMaxAir())) {
+                        || (airWay.size() == 1 && air == info.getMaxAir())) {
                 airWay.remove(0);
             }
             // else follow de nodes
@@ -134,6 +150,8 @@ public class myAI extends AI {
                 direction = seek(pos, airWay.get(0).coordinates);
                 return new DivingAction(velocity, direction);
             }
+
+
             // if ya got yer air back, we now need a new path to the pearl
             way.clear();
             // also we might need a new closest Trash
@@ -170,11 +188,9 @@ public class myAI extends AI {
              way.clear();
              return new ShoppingAction(item);
          }
-         /*for (Node pearl : openPearls) {
-            if (getDistance(pos, pearl.coordinates) < 200) {
-                way = quickestWay(pos, pearl.coordinates);
-            }
-         }*/
+         Point specialPos = new Point((pos.x + shopPos.x)/2,(pos.y + shopPos.y)/2);
+
+
          // if we havn't bought the 2 up's yet
          if (shoppingItems.size() > 2) {
              //if we have enough monayy yet, get way to da shop
@@ -192,7 +208,7 @@ public class myAI extends AI {
              } // else we need to collect more Trash
              // so check if we still have a currentTrash (else find one)
              else if (currentTrash == null) {
-                 currentTrash = getClosestTrash(pos);
+                 currentTrash = getClosestTrash(specialPos);
              } //now get to the next Trash
              else {
                  if (way.size() == 0) {
@@ -201,7 +217,7 @@ public class myAI extends AI {
                  return followPath(way, currentTrash);
              }
          }
-
+        //ZtyWcOlhwJ 1uGlLLbgFA
          /*// for teh rest of the up's
          if(currentFortune >= 2 && openPearls.size() > 2){
              way.clear();
@@ -230,6 +246,10 @@ public class myAI extends AI {
         }
 
         return new DivingAction(velocity, direction);
+    }
+
+    private DivingAction moveUpwards (float velocity) {
+        return new DivingAction(velocity, (float) (Math.PI/2));
     }
 
     private DivingAction followPath (ArrayList<Node> nodeWay, Point goal) {
@@ -459,6 +479,7 @@ public class myAI extends AI {
         return graph;
     }
 
+    //change the edge weight depending on if the path is in a stream
     private void connectNodes(Node n, Node m, int streamCheck){
         if (m.valid) {
             float dis= getDistance(n.coordinates, m.coordinates);
@@ -480,8 +501,6 @@ public class myAI extends AI {
     }
 
     private int streamCheck(Point p){
-        Rectangle[] left = info.getScene().getStreamsToTheLeft();
-        Rectangle[] right = info.getScene().getStreamsToTheRight();
         for (Rectangle stream : left) {
             if (stream.intersects(p.x-3, p.y-3, 6, 6)) {
                 return 1;
