@@ -50,9 +50,9 @@ public class myAI extends AI {
         currentTrash = getClosestTrash(new Point(info.getScene().getWidth()/2,0));
         // and set the order of upgrades
         shoppingItems.add(ShoppingItem.STREAMLINED_WIG);
+        shoppingItems.add(ShoppingItem.BALLOON_SET);
         shoppingItems.add(ShoppingItem.CORNER_CUTTER);
         shoppingItems.add(ShoppingItem.MOTORIZED_FLIPPERS);
-        shoppingItems.add(ShoppingItem.BALLOON_SET);
 
     }
 
@@ -108,7 +108,6 @@ public class myAI extends AI {
             }
             // if up, then up
             if (pos.y != 0) {
-                //TODO need to do some obs checks here
                 if(!pathFree(pos, new Point (pos.x, 0))) {
                     way = quickestWay(getClosestNode(pos), getClosestNode(new Point(pos.x, 0)));
                 }
@@ -126,7 +125,7 @@ public class myAI extends AI {
             return new DivingAction(velocity, direction);
         }
         // if ya too deep down, ya need to go up
-        if (air < Math.abs(pos.y * deep())) {
+        if (air < Math.abs(pos.y * deep()) && openPearls.size() > 2) {
             up = true;
         }
 
@@ -433,7 +432,12 @@ public class myAI extends AI {
                     }
                     if (y>0) {
                         //up x, y-1
-                        connectNodes(n , graph[x][y-1], 0);
+                        Node m = graph[x][y-1];
+                        Point p = new Point((n.coordinates.x+m.coordinates.x)/2,
+                                (n.coordinates.y+m.coordinates.y)/2);
+                        int streamcheck = streamCheck(p);
+                        if (streamcheck != 0) streamcheck=3;
+                        connectNodes(n , m, streamcheck);
                     }
                 }
                 graph[x][y] = n;
@@ -453,12 +457,16 @@ public class myAI extends AI {
                     m.edges.put(n, dis);
                 }
                 case 1 -> {
-                    n.edges.put(m, dis/2);
-                    m.edges.put(n, dis*2);
+                    n.edges.put(m, dis/3);
+                    m.edges.put(n, dis*3);
                 }
                 case 2 -> {
-                    n.edges.put(m, dis*2);
-                    m.edges.put(n, dis/2);
+                    n.edges.put(m, dis*3);
+                    m.edges.put(n, dis/3);
+                }
+                case 3 -> {
+                    n.edges.put(m, dis*3);
+                    m.edges.put(n, dis*3);
                 }
             }
         }
