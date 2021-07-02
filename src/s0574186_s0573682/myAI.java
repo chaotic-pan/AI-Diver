@@ -18,12 +18,13 @@ public class myAI extends AI {
     ArrayList<Point> pearls = new ArrayList<>();
     ArrayList<Node> openPearls;
     ArrayList<Node> way = new ArrayList<>();
-    ArrayList<Node> airWay = new ArrayList<>();
+    //ArrayList<Node> airWay = new ArrayList<>();
     Point currentTrash;
     ArrayList<Point> openTrash;
     Point shopPos;
     Rectangle[] left;
     Rectangle[] right;
+    boolean up = false;
 
     ArrayList<ShoppingItem> shoppingItems  = new ArrayList<>();
 
@@ -96,69 +97,33 @@ public class myAI extends AI {
             //look if there is enough air to get to the next pearl
             if (air < Math.abs(openPearls.get(0).topCost * deep()) + getDistance(pos, pearls.get(0))) {
                 //if not swim up
-                airWay = lastPearl.topPath;
-                if (pos.y != 0 && pathFree(pos, airWay.get(airWay.size()-1).coordinates) && air >= info.getMaxAir()) {
-                    return moveUpwards(velocity);
-                }
+               up = true;
             }
         }
-        //i4xljGb8LQ TnfCEx6qoX
 
-        //if there is only 2 pearls left and they're very close together, then go there and ignore everything?
-        if(openPearls.size() == 2 && getDistance(openPearls.get(0).coordinates,openPearls.get(1).coordinates) <= 100) {
-            airWay.clear();
-            way = quickestWay(getClosestNode(pos), openPearls.get(0));
-            if (way.size() != 0) return followPath(way,pearls.get(0));
-            else  direction = seek(pos,pearls.get(0));
-
-            return new DivingAction(velocity, direction);
+        if (up) {
+            //if there is only 2 pearls left and they're very close together, we don't need to go up
+            if (openPearls.size() < 3) {
+                up = false;
+            }
+            // if up, then up
+            if (pos.y != 0) {
+                //TODO need to do some obs checks here
+                return new DivingAction(velocity, (float) (Math.PI/2));
+            }
+            // if we're already up there, set !up
+            up = false;
         }
-         //look if there is enough air to get to the next trash
-         if (currentTrash != null) {
-             if (airWay.size()==0 && air < Math.abs(currentTrash.y * deep()) + getDistance(pos, currentTrash)) {
-                 //if not swim up
-                 airWay = quickestWay(pos, new Point(pos.x, 0));
-                 if (pos.y != 0 && pathFree(pos, airWay.get(airWay.size()-1).coordinates) && air >= info.getMaxAir()) {
-                     return moveUpwards(velocity);
-                 }
-             }
-         }
 
          // stick to the surface.....?
         if (shoppingItems.size()<=2 && air < Math.abs(pearls.get(0).y * deep()) + getDistance(pos, pearls.get(0)) && getDistance(pos, openPearls.get(0).top.coordinates) > 10 && pos.y == 0) {
             direction = seek(pos, openPearls.get(0).top.coordinates);
             return new DivingAction(velocity, direction);
         }
-        // get an airWay, if ya too deep down
-        if (air < Math.abs(pos.y * deep()) && airWay.size() == 0) {
-            airWay = quickestWay(pos, new Point(pos.x, 0));
+        // if ya too deep down, ya need to go up
+        if (air < Math.abs(pos.y * deep())) {
+            up = true;
         }
-        //follow airWay
-        if (airWay.size() > 0) {
-            // while next is direct reachable, yeet the current
-
-            while (way.size() > 1 && pathFree(pos, way.get(1).coordinates)) {
-                    way.remove(0);
-            }
-            // if ya close enough to the next Node OR ya got yer air back --> yeet
-            if ((airWay.size() > 1 && getDistance(pos, airWay.get(0).coordinates) < 10)
-                        || (airWay.size() == 1 && air == info.getMaxAir())) {
-                airWay.remove(0);
-            }
-            // else follow de nodes
-            if (airWay.size() > 0) {
-                direction = seek(pos, airWay.get(0).coordinates);
-                return new DivingAction(velocity, direction);
-            }
-
-
-            // if ya got yer air back, we now need a new path to the pearl
-            way.clear();
-            // also we might need a new closest Trash
-            currentTrash = null;
-        }
-
-
 
          //in case we got hit by a fish, then we loose a fortune
          if (currentFortune < lastFortune) lastFortune=currentFortune;
@@ -198,18 +163,25 @@ public class myAI extends AI {
                  //look if there is enough air to get to the shop
                  if (air < Math.abs(getDistance(pos, shopPos))) {
                      //if not swim up
-                     airWay = quickestWay(pos, new Point(pos.x, 0));
+                     up = true;
                  }
-
+                 //TODO do I have to clean way here?
                  if (way.size() == 0) {
                      way = quickestWay(pos, shopPos);
                  }
                  return followPath(way, shopPos);
-             } // else we need to collect more Trash
+             }
+             // else we need to collect more Trash
              // so check if we still have a currentTrash (else find one)
              else if (currentTrash == null) {
                  currentTrash = getClosestTrash(specialPos);
-             } //now get to the next Trash
+             }
+             //look if there is enough air to get to the next trash
+             if (air < Math.abs(getDistance(pos, currentTrash))) {
+                 //if not swim up
+                 up = true;
+             }
+             //now get to the next Trash
              else {
                  if (way.size() == 0) {
                      way = quickestWay(pos, currentTrash);
@@ -217,18 +189,8 @@ public class myAI extends AI {
                  return followPath(way, currentTrash);
              }
          }
-        //ZtyWcOlhwJ 1uGlLLbgFA
-         /*// for teh rest of the up's
-         if(currentFortune >= 2 && openPearls.size() > 2){
-             way.clear();
-             way = quickestWay(pos, shopPos);
-             return followPath(way, shopPos);
-         }*/
 
-
-
-        //TODO check if theres a trash really close by, then go there or a fucking pearl (like 50 pixels mate)
-        // maybe then don't go DIRECTLY to the shop, if the next pearl is quite close
+        //TODO fuck the other updates
 
         // check if there's a path you can follow
         if(way.size() > 0) {
@@ -246,10 +208,6 @@ public class myAI extends AI {
         }
 
         return new DivingAction(velocity, direction);
-    }
-
-    private DivingAction moveUpwards (float velocity) {
-        return new DivingAction(velocity, (float) (Math.PI/2));
     }
 
     private DivingAction followPath (ArrayList<Node> nodeWay, Point goal) {
@@ -274,6 +232,7 @@ public class myAI extends AI {
     }
 
     private float deep() {
+        //TODO idk somthing i guess
         if (openPearls.size() == 1) {
             return 0;
         }
