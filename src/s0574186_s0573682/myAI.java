@@ -95,7 +95,7 @@ public class myAI extends AI {
             lastScore = info.getScore();
 
             //look if there is enough air to get to the next pearl
-            if (air < Math.abs(openPearls.get(0).topCost * deep()) + getDistance(pos, pearls.get(0))) {
+            if (air < Math.abs(openPearls.get(0).coordinates.y * deep()) + getDistance(pos, pearls.get(0))) {
                 //if not swim up
                up = true;
             }
@@ -109,7 +109,12 @@ public class myAI extends AI {
             // if up, then up
             if (pos.y != 0) {
                 //TODO need to do some obs checks here
-                return new DivingAction(velocity, (float) (Math.PI/2));
+                if(!pathFree(pos, new Point (pos.x, 0))) {
+                    way = quickestWay(getClosestNode(pos), getClosestNode(new Point(pos.x, 0)));
+                }
+                else {
+                    return new DivingAction(velocity, (float) (Math.PI / 2));
+                }
             }
             // if we're already up there, set !up
             up = false;
@@ -232,14 +237,14 @@ public class myAI extends AI {
     }
 
     private float deep() {
-        //TODO idk somthing i guess
+        //TODO change deep constance overall (bcs we need more air)
         if (openPearls.size() == 1) {
             return 0;
         }
         if (shoppingItems.size() <=2) {
-            return 0.4f;
+            return 0.42f;
         }
-        return  0.77f;
+        return  0.79f;
     }
 
     private Point getClosestTrash(Point pos) {
